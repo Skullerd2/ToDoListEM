@@ -1,24 +1,25 @@
-//
-//  ViewController.swift
-//  ToDoListEM
-//
-//  Created by Vadim on 20.11.2024.
-//
-
 import UIKit
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
+    //Elements
     let searchField = UITextField()
     let tableView = UITableView()
     let toolbar = UIToolbar()
+    let countTasksLabel = UILabel()
+    let createTaskButton = UIButton(type: .system)
     
-    let tasks: [TaskModel] = []
+    var tasks: [ToDoS] = []
     
     let editViewController = EditViewController()
     
+    let networkManager = NetworkManager.shared
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        fetchTasks()
+        
         view.backgroundColor = .black
         
         navigationController?.navigationBar.prefersLargeTitles = true
@@ -28,6 +29,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         setSearchField()
         setToolbar()
+        setCountTasksLabel()
+        setCreateTaskButton()
         setTableView()
     }
 
@@ -48,29 +51,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     private func setToolbar(){
-        let label = UILabel()
-        label.text = "\(tasks.count) задач"
-        label.font = UIFont(name: "Helvetica Neue", size: 15)
-        label.sizeToFit()
-        
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
-        button.tintColor = .fromHex("FED702")
-        button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-        
-        toolbar.addSubview(label)
-        toolbar.addSubview(button)
-        
-        label.translatesAutoresizingMaskIntoConstraints = false
-        button.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: toolbar.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
-            button.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
-            button.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -16)
-        ])
-        
         toolbar.backgroundColor = .fromHex("272729")
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(toolbar)
@@ -79,6 +59,32 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             toolbar.heightAnchor.constraint(equalToConstant: 83)
+        ])
+    }
+    
+    private func setCountTasksLabel(){
+        countTasksLabel.text = "\(tasks.count) задач"
+        countTasksLabel.font = UIFont(name: "Helvetica Neue", size: 15)
+        countTasksLabel.sizeToFit()
+        countTasksLabel.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.addSubview(countTasksLabel)
+        
+        NSLayoutConstraint.activate([
+            countTasksLabel.centerXAnchor.constraint(equalTo: toolbar.centerXAnchor),
+            countTasksLabel.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+        ])
+    }
+    
+    private func setCreateTaskButton(){
+        createTaskButton.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        createTaskButton.tintColor = .fromHex("FED702")
+        createTaskButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        toolbar.addSubview(createTaskButton)
+        createTaskButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            createTaskButton.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+            createTaskButton.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -16)
         ])
     }
     
@@ -104,13 +110,19 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 7
+        return tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
-        cell.titleTask.text = "Помыть собаку"
-        cell.imageViewCompleted.image = UIImage(systemName: "circle")
+        cell.titleTask.text = tasks[indexPath.row].todo
+        cell.descriptionTask.text = tasks[indexPath.row].todo
+        if tasks[indexPath.row].completed{
+            cell.imageViewCompleted.image = UIImage(named: "checkmark")
+        } else{
+            cell.imageViewCompleted.image = UIImage(named: "circle")
+        }
+        cell.dateLabel.text = editViewController.fetchCurrentDate()
         return cell
     }
     
@@ -118,11 +130,33 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
+        
+        tasks[indexPath.row].completed = !(tasks[indexPath.row].completed)
+        tableView.reloadData()
     }
     
     @objc func buttonTapped() {
         
         navigationController?.pushViewController(editViewController, animated: true)
+    }
+}
+
+
+//MARK: - Network
+extension ViewController{
+    
+    func fetchTasks(){
+        networkManager.fetchTasks { [weak self] result in
+            switch result{
+            case .success(let tasks):
+                self?.tasks = tasks.todos
+                self?.countTasksLabel.text = "\(String(describing: self!.tasks.count)) задач"
+                self?.tableView.reloadData()
+                print(tasks)
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
     }
 }
 

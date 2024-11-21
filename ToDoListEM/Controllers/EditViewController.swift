@@ -34,7 +34,6 @@ class EditViewController: UIViewController {
         dateLabel.font = UIFont(name: "Helvetica Neue", size: 17)
         dateLabel.textColor = .fromHex("8E8E8F")
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        dateLabel.text = fetchCurrentDate()
         
         view.addSubview(dateLabel)
         NSLayoutConstraint.activate([
@@ -59,12 +58,11 @@ class EditViewController: UIViewController {
         ])
     }
     
-    private func fetchCurrentDate() -> String{
+    func fetchCurrentDate() -> String{
         let currentDate = Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yy"
-        let formattedDate = formatter.string(from: currentDate)
-        
+        let formattedDate = formatter.string(from: currentDate)        
         return formattedDate
     }
 }
