@@ -13,13 +13,17 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     let tableView = UITableView()
     let toolbar = UIToolbar()
     
+    let tasks: [TaskModel] = []
+    
+    let editViewController = EditViewController()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        view.tintColor = .fromHex("F4F4F4")
         
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
+        navigationController?.navigationBar.tintColor = .fromHex("F4F4F4")
         title = "Задачи"
         
         setSearchField()
@@ -44,6 +48,29 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     private func setToolbar(){
+        let label = UILabel()
+        label.text = "\(tasks.count) задач"
+        label.font = UIFont(name: "Helvetica Neue", size: 15)
+        label.sizeToFit()
+        
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        button.tintColor = .fromHex("FED702")
+        button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        
+        toolbar.addSubview(label)
+        toolbar.addSubview(button)
+        
+        label.translatesAutoresizingMaskIntoConstraints = false
+        button.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: toolbar.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+            button.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+            button.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -16)
+        ])
+        
         toolbar.backgroundColor = .fromHex("272729")
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(toolbar)
@@ -71,9 +98,9 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             tableView.bottomAnchor.constraint(equalTo: toolbar.topAnchor)
         ])
     }
-
+    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return view.frame.height / 6
+        return view.frame.height / 7
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -82,6 +109,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
+        cell.titleTask.text = "Помыть собаку"
+        cell.imageViewCompleted.image = UIImage(systemName: "circle")
         return cell
     }
     
@@ -89,6 +118,11 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
+    }
+    
+    @objc func buttonTapped() {
+        
+        navigationController?.pushViewController(editViewController, animated: true)
     }
 }
 
@@ -153,5 +187,12 @@ extension UIColor {
             blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
             alpha: CGFloat(1.0)
         )
+    }
+}
+
+extension ViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }

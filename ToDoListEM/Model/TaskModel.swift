@@ -8,5 +8,15 @@
 import Foundation
 
 struct TaskModel{
-    
+    let todos: [ToDoS]
+    let total: Int
+    let skip: Int
+    let limit: Int
+}
+
+struct ToDoS{
+    let id: Int
+    let todo: String
+    let completed: Bool
+    let userId: Int
 }
