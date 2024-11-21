@@ -1,22 +1,19 @@
-//
-//  TaskModel.swift
-//  ToDoListEM
-//
-//  Created by Vadim on 20.11.2024.
-//
-
 import Foundation
 
-struct TaskModel{
-    let todos: [ToDoS]
-    let total: Int
-    let skip: Int
-    let limit: Int
+struct TaskModel: Decodable{
+    var todos: [ToDoS]
 }
 
-struct ToDoS{
-    let id: Int
-    let todo: String
-    let completed: Bool
-    let userId: Int
+struct ToDoS: Decodable{
+    var todo: String
+    var description: String?
+    var date: String?
+    var completed: Bool
+    
+    init(todo: String, description: String? = nil, date: String? = nil, completed: Bool) {
+        self.todo = todo
+        self.description = todo
+        self.date = "01/01/24"
+        self.completed = completed
+    }
 }

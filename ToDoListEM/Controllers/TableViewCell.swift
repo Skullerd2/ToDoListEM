@@ -37,7 +37,7 @@ class TableViewCell: UITableViewCell {
     var imageViewCompleted: UIImageView = {
         let imageView = UIImageView()
         imageView.backgroundColor = .none
-        imageView.image = UIImage(systemName: "circle")
+        imageView.image = UIImage(named: "circle")
         imageView.tintColor = .fromHex("4D555E")
         return imageView
     }()
@@ -61,6 +61,7 @@ class TableViewCell: UITableViewCell {
             imageViewCompleted.widthAnchor.constraint(equalToConstant: 35),
             imageViewCompleted.heightAnchor.constraint(equalTo: imageViewCompleted.widthAnchor),
             titleTask.leadingAnchor.constraint(equalTo: imageViewCompleted.trailingAnchor, constant: 5),
+            titleTask.trailingAnchor.constraint(equalTo: contentView.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             titleTask.topAnchor.constraint(equalTo: imageViewCompleted.topAnchor, constant: 7),
             descriptionTask.topAnchor.constraint(equalTo: titleTask.bottomAnchor, constant: 10),
             descriptionTask.leadingAnchor.constraint(equalTo: titleTask.leadingAnchor),
