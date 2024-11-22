@@ -1,4 +1,5 @@
 import UIKit
+import CoreData
 
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
@@ -9,16 +10,32 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     let countTasksLabel = UILabel()
     let createTaskButton = UIButton(type: .system)
     
-    var tasks: [ToDoS] = []
+    var tasks: [Task] = []
     
     let editViewController = EditViewController()
     
     let networkManager = NetworkManager.shared
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        let context = getContext()
+        let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "date", ascending: true)
+        fetchRequest.sortDescriptors = [sortDescriptor]
+        do {
+            tasks = try context.fetch(fetchRequest)
+            updateCountTasksLabel()
+        } catch let error as NSError {
+            print(error.localizedDescription)
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        fetchTasks()
+        if isFirstLaunch(){
+            fetchTasks()
+        }
         
         view.backgroundColor = .black
         
@@ -63,7 +80,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     private func setCountTasksLabel(){
-        countTasksLabel.text = "\(tasks.count) задач"
+        updateCountTasksLabel()
         countTasksLabel.font = UIFont(name: "Helvetica Neue", size: 15)
         countTasksLabel.sizeToFit()
         countTasksLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -122,7 +139,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         } else{
             cell.imageViewCompleted.image = UIImage(named: "circle")
         }
-        cell.dateLabel.text = editViewController.fetchCurrentDate()
+        cell.dateLabel.text = fetchCurrentDate()
         return cell
     }
     
@@ -136,11 +153,77 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     @objc func buttonTapped() {
-        
+        let date = fetchCurrentDate()
+        saveTask(todo: "Название задачи", descript: "Описание задачи", completed: false, date: date)
         navigationController?.pushViewController(editViewController, animated: true)
+    }
+    
+    func fetchCurrentDate() -> String{
+        let currentDate = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        let formattedDate = formatter.string(from: currentDate)
+        return formattedDate
+    }
+    
+    func updateCountTasksLabel(){
+        countTasksLabel.text = "\(tasks.count) задач"
     }
 }
 
+
+//MARK: - Is first launch
+extension ViewController{
+    func isFirstLaunch() -> Bool{
+        let defaults = UserDefaults.standard
+        let hasLaunchedBefore = defaults.bool(forKey: "hasLaunchedBefore")
+
+        if !hasLaunchedBefore {
+            defaults.set(true, forKey: "hasLaunchedBefore")
+            return true
+        }
+        return false
+    }
+}
+
+//MARK: - CoreData
+extension ViewController{
+    
+    private func getContext() -> NSManagedObjectContext{
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        return appDelegate.persistentContainer.viewContext
+    }
+    
+    private func deleteTask(){
+        let context = getContext()
+        //Как удалять из таблицы по элементу
+        do {
+            try context.save()
+        } catch let error as NSError{
+            print(error.localizedDescription)
+        }
+    }
+    
+    private func saveTask(todo: String, descript: String, completed: Bool, date: String) {
+        let context = getContext()
+        
+        guard let entity = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
+        let taskObject = Task(entity: entity, insertInto: context)
+        taskObject.todo = todo
+        taskObject.descrip = descript
+        taskObject.completed = completed
+        taskObject.date = date
+        
+        do {
+            try context.save()
+            tasks.append(taskObject)
+            tableView.reloadData()
+            updateCountTasksLabel()
+        } catch let error as NSError{
+            print(error.localizedDescription)
+        }
+    }
+}
 
 //MARK: - Network
 extension ViewController{
@@ -149,10 +232,11 @@ extension ViewController{
         networkManager.fetchTasks { [weak self] result in
             switch result{
             case .success(let tasks):
-                self?.tasks = tasks.todos
-                self?.countTasksLabel.text = "\(String(describing: self!.tasks.count)) задач"
+                for i in 0..<tasks.todos.count{
+                    self?.saveTask(todo: tasks.todos[i].todo, descript: tasks.todos[i].todo, completed: tasks.todos[i].completed, date: "01/01/24")
+                }
+                self?.updateCountTasksLabel()
                 self?.tableView.reloadData()
-                print(tasks)
             case .failure(let error):
                 print(error.localizedDescription)
             }

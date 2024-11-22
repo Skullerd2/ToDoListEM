@@ -33,6 +33,7 @@ class EditViewController: UIViewController {
     private func setDateLabel(){
         dateLabel.font = UIFont(name: "Helvetica Neue", size: 17)
         dateLabel.textColor = .fromHex("8E8E8F")
+        dateLabel.text = "01/01/24"
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
         
         view.addSubview(dateLabel)
@@ -56,14 +57,6 @@ class EditViewController: UIViewController {
             descriptionTextView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             descriptionTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
-    }
-    
-    func fetchCurrentDate() -> String{
-        let currentDate = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yy"
-        let formattedDate = formatter.string(from: currentDate)        
-        return formattedDate
     }
 }
 

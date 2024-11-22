@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A5F798462CEF927300EBF8F1 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = A5F798452CEF927300EBF8F1 /* Alamofire */; };
 		A5F798752CEFBBB900EBF8F1 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = A5F7986D2CEFBBB900EBF8F1 /* .gitignore */; };
+		A5F7988C2CEFD4B500EBF8F1 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = A5F7988B2CEFD4B500EBF8F1 /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A5F798462CEF927300EBF8F1 /* Alamofire in Frameworks */,
+				A5F7988C2CEFD4B500EBF8F1 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,7 +86,7 @@
 			);
 			name = ToDoListEM;
 			packageProductDependencies = (
-				A5F798452CEF927300EBF8F1 /* Alamofire */,
+				A5F7988B2CEFD4B500EBF8F1 /* Alamofire */,
 			);
 			productName = ToDoListEM;
 			productReference = A5A6A78B2CEE2A2500C61E92 /* ToDoListEM.app */;
@@ -117,7 +117,7 @@
 			mainGroup = A5A6A7822CEE2A2500C61E92;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A5F798442CEF927300EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				A5F7988A2CEFD4B500EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A5A6A78C2CEE2A2500C61E92 /* Products */;
@@ -352,7 +352,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		A5F798442CEF927300EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+		A5F7988A2CEFD4B500EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
 			requirement = {
@@ -363,9 +363,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A5F798452CEF927300EBF8F1 /* Alamofire */ = {
+		A5F7988B2CEFD4B500EBF8F1 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A5F798442CEF927300EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			package = A5F7988A2CEFD4B500EBF8F1 /* XCRemoteSwiftPackageReference "Alamofire" */;
 			productName = Alamofire;
 		};
 /* End XCSwiftPackageProductDependency section */
