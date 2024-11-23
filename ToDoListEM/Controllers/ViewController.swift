@@ -12,8 +12,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     var tasks: [Task] = []
     
-    let editViewController = EditViewController()
-    
     let networkManager = NetworkManager.shared
     
     override func viewWillAppear(_ animated: Bool) {
@@ -133,7 +131,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
         cell.titleTask.text = tasks[indexPath.row].todo
-        cell.descriptionTask.text = tasks[indexPath.row].todo
+        cell.descriptionTask.text = tasks[indexPath.row].descrip
         if tasks[indexPath.row].completed{
             cell.imageViewCompleted.image = UIImage(named: "checkmark")
         } else{
@@ -149,13 +147,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }
         
         tasks[indexPath.row].completed = !(tasks[indexPath.row].completed)
+        saveTask(todo: tasks[indexPath.row].todo!, descript: tasks[indexPath.row].description, completed: !(tasks[indexPath.row].completed), date: tasks[indexPath.row].date!)
         tableView.reloadData()
     }
     
     @objc func buttonTapped() {
         let date = fetchCurrentDate()
         saveTask(todo: "Название задачи", descript: "Описание задачи", completed: false, date: date)
-        navigationController?.pushViewController(editViewController, animated: true)
+        pushEditViewController(title: "Название задачи", desrip: "Описание задачи", completed: false, date: date, index: tasks.count - 1)
     }
     
     func fetchCurrentDate() -> String{
@@ -169,8 +168,62 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     func updateCountTasksLabel(){
         countTasksLabel.text = "\(tasks.count) задач"
     }
+    
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] suggestedActions in
+            
+            let editAction = UIAction(title: "Редактировать", image: UIImage(named: "edit")?.withTintColor(.fromHex("F4F4F4"))) { [weak self] action in
+                
+                self?.pushEditViewController(title: self?.tasks[indexPath.row].todo ?? "Unknown", desrip: self?.tasks[indexPath.row].descrip ?? "Unknown", completed: self?.tasks[indexPath.row].completed ?? false, date: self?.tasks[indexPath.row].date ?? "Unknown", index: indexPath.row)
+            }
+            
+            let shareAction = UIAction(title: "Поделиться", image: UIImage(named: "share")?.withTintColor(.fromHex("F4F4F4"))) { [weak self] action in
+                
+                let shareText = "Название задачи: \(self?.tasks[indexPath.row].todo ?? "Unknown"), описание задачи: \(self?.tasks[indexPath.row].descrip ?? "Unknown"), статус задачи: \((((self?.tasks[indexPath.row].completed) != nil) ? "Выполнена" : "Не выполнена") ?? "Unknown"), время постановления: \(self?.tasks[indexPath.row].date ?? "Unknown")"
+                let shareController = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+                
+                shareController.completionWithItemsHandler = { _, bool, _, _ in
+                    if bool == true{
+                        print("Успешно!")
+                    }
+                }
+                self?.present(shareController, animated: true, completion: nil)
+            }
+            
+            let deleteAction = UIAction(title: "Удалить", image: UIImage(named: "delete"), attributes: .destructive) { [weak self] action in
+                self?.deleteTask(at: indexPath.row)
+            }
+            
+            return UIMenu(children: [editAction, shareAction, deleteAction])
+        }
+        
+        return configuration
+    }
 }
 
+
+//MARK: - Transfer data between VC
+protocol DataTransferDelegate: AnyObject {
+    func didTransferData(title: String, descrip: String, completed: Bool, date: String, index: Int)
+}
+
+extension ViewController: DataTransferDelegate{
+    func didTransferData(title: String, descrip: String, completed: Bool, date: String, index: Int) {
+        updateTask(todo: title, descript: descrip, completed: completed, date: date, index: index)
+    }
+    
+    func pushEditViewController(title: String, desrip: String, completed: Bool, date: String, index: Int){
+        let editViewController = EditViewController()
+        editViewController.delegate = self
+        editViewController.titleTask = title
+        editViewController.descriptionTask = desrip
+        editViewController.dateTask = date
+        editViewController.completed = completed
+        editViewController.indexOfTask = index
+        navigationController?.pushViewController(editViewController, animated: true)
+    }
+}
 
 //MARK: - Is first launch
 extension ViewController{
@@ -194,10 +247,30 @@ extension ViewController{
         return appDelegate.persistentContainer.viewContext
     }
     
-    private func deleteTask(){
+    private func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
-        //Как удалять из таблицы по элементу
+        let task = tasks[index]
+        task.todo = todo
+        task.descrip = descript
+        task.date = date
+        task.completed = completed
         do {
+            try context.save()
+            tableView.reloadData()
+            updateCountTasksLabel()
+        } catch let error as NSError{
+            print(error.localizedDescription)
+        }
+    }
+    
+    private func deleteTask(at index: Int){
+        let context = getContext()
+        let task = tasks[index]
+        do {
+            context.delete(task)
+            tasks.remove(at: index)
+            tableView.reloadData()
+            updateCountTasksLabel()
             try context.save()
         } catch let error as NSError{
             print(error.localizedDescription)

@@ -10,9 +10,9 @@ struct ToDoS: Decodable{
     var date: String?
     var completed: Bool
     
-    init(todo: String, description: String? = nil, date: String? = nil, completed: Bool) {
+    init(todo: String, description: String?, date: String?, completed: Bool) {
         self.todo = todo
-        self.description = todo
+        self.description = description
         self.date = "01/01/24"
         self.completed = completed
     }

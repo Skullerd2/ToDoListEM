@@ -11,7 +11,7 @@ class TableViewCell: UITableViewCell {
 
     var titleTask: UILabel = {
         let label = UILabel()
-        label.text = ""
+        label.text = "Название задачи"
         label.textColor = .fromHex("F4F4F4")
         label.font = UIFont(name: "Helvetica Bold", size: 19)
         return label
@@ -19,7 +19,7 @@ class TableViewCell: UITableViewCell {
     
     var descriptionTask: UILabel = {
         let label = UILabel()
-        label.text = "Блять ебаная псина в говне опять обвалялась, а мне теперь слизывать"
+        label.text = "Описание задачи"
         label.numberOfLines = 2
         label.textColor = .fromHex("F4F4F4")
         label.font = UIFont(name: "Helvetica Neue", size: 15)
