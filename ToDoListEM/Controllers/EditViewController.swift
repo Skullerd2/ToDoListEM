@@ -16,6 +16,7 @@ class EditViewController: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .black
         nameTextField.delegate = self
         navigationController?.navigationBar.tintColor = .fromHex("FED702")
         setNameTextField()
@@ -85,13 +86,6 @@ extension EditViewController{
 extension EditViewController {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         nameTextField.resignFirstResponder()
-        return true
-    }
-}
-
-extension UITextView{
-    func textViewShouldReturn(_ textView: UITextView) -> Bool{
-        textView.resignFirstResponder()
         return true
     }
 }

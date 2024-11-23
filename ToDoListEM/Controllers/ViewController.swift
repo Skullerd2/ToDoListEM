@@ -135,13 +135,13 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
         let task = isSearching ? filteredTasks[indexPath.row] : tasks[indexPath.row]
         cell.titleTask.text = task.todo
-        cell.descriptionTask.text = tasks[indexPath.row].descrip
-        if tasks[indexPath.row].completed{
+        cell.descriptionTask.text = task.descrip
+        if task.completed{
             cell.imageViewCompleted.image = UIImage(named: "checkmark")
         } else{
             cell.imageViewCompleted.image = UIImage(named: "circle")
         }
-        cell.dateLabel.text = fetchCurrentDate()
+        cell.dateLabel.text = task.date
         return cell
     }
     
@@ -149,9 +149,11 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
-        
-        tasks[indexPath.row].completed = !(tasks[indexPath.row].completed)
-        saveTask(todo: tasks[indexPath.row].todo!, descript: tasks[indexPath.row].description, completed: !(tasks[indexPath.row].completed), date: tasks[indexPath.row].date!)
+        if isSearching{
+            updateTask(todo: (filteredTasks[indexPath.row].todo!), descript: filteredTasks[indexPath.row].descrip!, completed: !(filteredTasks[indexPath.row].completed), date: filteredTasks[indexPath.row].date!, index: indexPath.row)
+        } else{
+            updateTask(todo: (tasks[indexPath.row].todo!), descript: tasks[indexPath.row].descrip!, completed: !(tasks[indexPath.row].completed), date: tasks[indexPath.row].date!, index: indexPath.row)
+        }
         tableView.reloadData()
     }
     
@@ -320,6 +322,7 @@ extension ViewController{
         isSearching = true
         filteredTasks = tasks.filter { $0.todo!.localizedCaseInsensitiveContains(task) }
         tableView.reloadData()
+        countTasksLabel.text = "\(filteredTasks.count)"
     }
 }
 
