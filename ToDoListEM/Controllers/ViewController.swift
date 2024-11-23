@@ -160,8 +160,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                     index = indexPath.row
                 }
 
-                let task = tasks[index] // получаем задачу напрямую из tasks
-                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index) // используем index в tasks
+                let task = tasks[index]
+                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index)
 
                 tableView.reloadData()
     }
@@ -325,14 +325,14 @@ extension ViewController{
     func searchTask(task: String) {
         guard task != "" else {
             isSearching = false
-            filteredTaskIndices = [] // Очищаем filteredTaskIndices, когда поиск пуст
+            filteredTaskIndices = []
             tableView.reloadData()
             return
         }
 
         isSearching = true
-        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in // Переименовали task в taskItem для ясности
-            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil // Применяем метод к taskItem.todo
+        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
+            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
         }
         tableView.reloadData()
         countTasksLabel.text = "\(filteredTaskIndices.count) задач"
