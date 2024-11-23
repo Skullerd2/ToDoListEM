@@ -1,8 +1,8 @@
 import UIKit
 import CoreData
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
+    
     //Elements
     let searchField = UITextField()
     let tableView = UITableView()
@@ -11,6 +11,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     let createTaskButton = UIButton(type: .system)
     
     var tasks: [Task] = []
+    var filteredTasks: [Task] = []
+    var isSearching = false
     
     let networkManager = NetworkManager.shared
     
@@ -31,6 +33,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        searchField.delegate = self
         if isFirstLaunch(){
             fetchTasks()
         }
@@ -48,7 +51,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         setCreateTaskButton()
         setTableView()
     }
-
+    
     
     private func setSearchField(){
         searchField.backgroundColor = .fromHex("272729")
@@ -125,12 +128,13 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tasks.count
+        return isSearching ? filteredTasks.count : tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
-        cell.titleTask.text = tasks[indexPath.row].todo
+        let task = isSearching ? filteredTasks[indexPath.row] : tasks[indexPath.row]
+        cell.titleTask.text = task.todo
         cell.descriptionTask.text = tasks[indexPath.row].descrip
         if tasks[indexPath.row].completed{
             cell.imageViewCompleted.image = UIImage(named: "checkmark")
@@ -230,7 +234,7 @@ extension ViewController{
     func isFirstLaunch() -> Bool{
         let defaults = UserDefaults.standard
         let hasLaunchedBefore = defaults.bool(forKey: "hasLaunchedBefore")
-
+        
         if !hasLaunchedBefore {
             defaults.set(true, forKey: "hasLaunchedBefore")
             return true
@@ -298,6 +302,27 @@ extension ViewController{
     }
 }
 
+//MARK: - Searching among the tasks
+
+extension ViewController{
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        searchField.resignFirstResponder()
+        searchTask(task: searchField.text ?? "")
+        return true
+    }
+    
+    func searchTask(task: String){
+        guard task != "" else {
+            isSearching = false
+            tableView.reloadData()
+            return
+        }
+        isSearching = true
+        filteredTasks = tasks.filter { $0.todo!.localizedCaseInsensitiveContains(task) }
+        tableView.reloadData()
+    }
+}
+
 //MARK: - Network
 extension ViewController{
     
@@ -322,7 +347,7 @@ extension UITextField {
         let leftPaddingView = UIView(frame: CGRect(x: 0, y: 0, width: padding + (leftIcon == nil ? 0 : 24), height: self.frame.height))
         self.leftView = leftPaddingView
         self.leftViewMode = .always
-
+        
         if let leftIcon = leftIcon {
             let leftIconView = UIImageView(frame: CGRect(x: padding, y: 0, width: 20, height: 20))
             leftIconView.image = leftIcon
@@ -331,11 +356,11 @@ extension UITextField {
             leftPaddingView.addSubview(leftIconView)
             leftIconView.center.y = leftPaddingView.center.y
         }
-
+        
         let rightPaddingView = UIView(frame: CGRect(x: 0, y: 0, width: padding + (rightIcon == nil ? 0 : 24) , height: self.frame.height))
         self.rightView = rightPaddingView
         self.rightViewMode = .always
-
+        
         if let rightIcon = rightIcon {
             let rightIconView = UIImageView(frame: CGRect(x: 0, y: 0, width: 20, height: 20))
             rightIconView.image = rightIcon
@@ -378,12 +403,5 @@ extension UIColor {
             blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
             alpha: CGFloat(1.0)
         )
-    }
-}
-
-extension ViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
     }
 }

@@ -1,6 +1,6 @@
 import UIKit
 
-class EditViewController: UIViewController {
+class EditViewController: UIViewController, UITextFieldDelegate {
 
     weak var delegate: DataTransferDelegate?
     
@@ -16,6 +16,7 @@ class EditViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        nameTextField.delegate = self
         navigationController?.navigationBar.tintColor = .fromHex("FED702")
         setNameTextField()
         setDateLabel()
@@ -81,7 +82,7 @@ extension EditViewController{
     }
 }
 
-extension EditViewController: UITextFieldDelegate {
+extension EditViewController {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         nameTextField.resignFirstResponder()
         return true
