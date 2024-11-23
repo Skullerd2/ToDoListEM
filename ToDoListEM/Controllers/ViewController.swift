@@ -11,7 +11,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     let createTaskButton = UIButton(type: .system)
     
     var tasks: [Task] = []
-    var filteredTasks: [Task] = []
+    var filteredTaskIndices: [Int] = []
     var isSearching = false
     
     let networkManager = NetworkManager.shared
@@ -128,33 +128,42 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return isSearching ? filteredTasks.count : tasks.count
+        return isSearching ? filteredTaskIndices.count : tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else {return UITableViewCell()}
-        let task = isSearching ? filteredTasks[indexPath.row] : tasks[indexPath.row]
-        cell.titleTask.text = task.todo
-        cell.descriptionTask.text = task.descrip
-        if task.completed{
-            cell.imageViewCompleted.image = UIImage(named: "checkmark")
-        } else{
-            cell.imageViewCompleted.image = UIImage(named: "circle")
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
+            
+            let task: Task
+            if isSearching {
+                let index = filteredTaskIndices[indexPath.row]
+                task = tasks[index]
+            } else {
+                task = tasks[indexPath.row]
+            }
+
+            cell.titleTask.text = task.todo
+            cell.descriptionTask.text = task.descrip
+            cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
+            cell.dateLabel.text = task.date
+            return cell
         }
-        cell.dateLabel.text = task.date
-        return cell
-    }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
-        if isSearching{
-            updateTask(todo: (filteredTasks[indexPath.row].todo!), descript: filteredTasks[indexPath.row].descrip!, completed: !(filteredTasks[indexPath.row].completed), date: filteredTasks[indexPath.row].date!, index: indexPath.row)
-        } else{
-            updateTask(todo: (tasks[indexPath.row].todo!), descript: tasks[indexPath.row].descrip!, completed: !(tasks[indexPath.row].completed), date: tasks[indexPath.row].date!, index: indexPath.row)
-        }
-        tableView.reloadData()
+        let index: Int
+                if isSearching {
+                    index = filteredTaskIndices[indexPath.row]
+                } else {
+                    index = indexPath.row
+                }
+
+                let task = tasks[index] // получаем задачу напрямую из tasks
+                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index) // используем index в tasks
+
+                tableView.reloadData()
     }
     
     @objc func buttonTapped() {
@@ -308,21 +317,25 @@ extension ViewController{
 
 extension ViewController{
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        searchField.resignFirstResponder()
-        searchTask(task: searchField.text ?? "")
-        return true
-    }
+            searchField.resignFirstResponder()
+            searchTask(task: searchField.text ?? "")
+            return true
+        }
     
-    func searchTask(task: String){
+    func searchTask(task: String) {
         guard task != "" else {
             isSearching = false
+            filteredTaskIndices = [] // Очищаем filteredTaskIndices, когда поиск пуст
             tableView.reloadData()
             return
         }
+
         isSearching = true
-        filteredTasks = tasks.filter { $0.todo!.localizedCaseInsensitiveContains(task) }
+        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in // Переименовали task в taskItem для ясности
+            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil // Применяем метод к taskItem.todo
+        }
         tableView.reloadData()
-        countTasksLabel.text = "\(filteredTasks.count)"
+        countTasksLabel.text = "\(filteredTaskIndices.count) задач"
     }
 }
 
