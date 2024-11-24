@@ -13,6 +13,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var tasks: [Task] = []
     var filteredTaskIndices: [Int] = []
     var isSearching = false
+    var context: NSManagedObjectContext!
+    var heightOfRow: [Int] = []
     
     let networkManager = NetworkManager.shared
     
@@ -124,7 +126,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return view.frame.height / 7
+        return 120
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -133,7 +135,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
-            
+        heightOfRow.append(cell.descriptionTask.numberOfLines)
             let task: Task
             if isSearching {
                 let index = filteredTaskIndices[indexPath.row]
@@ -257,12 +259,12 @@ extension ViewController{
 //MARK: - CoreData
 extension ViewController{
     
-    private func getContext() -> NSManagedObjectContext{
+    func getContext() -> NSManagedObjectContext{
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         return appDelegate.persistentContainer.viewContext
     }
     
-    private func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
+    func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
         let task = tasks[index]
         task.todo = todo
@@ -278,7 +280,7 @@ extension ViewController{
         }
     }
     
-    private func deleteTask(at index: Int){
+    func deleteTask(at index: Int){
         let context = getContext()
         let task = tasks[index]
         do {
@@ -292,23 +294,26 @@ extension ViewController{
         }
     }
     
-    private func saveTask(todo: String, descript: String, completed: Bool, date: String) {
+    func saveTask(todo: String, descript: String, completed: Bool, date: String) {
         let context = getContext()
         
-        guard let entity = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
-        let taskObject = Task(entity: entity, insertInto: context)
-        taskObject.todo = todo
-        taskObject.descrip = descript
-        taskObject.completed = completed
-        taskObject.date = date
-        
-        do {
-            try context.save()
-            tasks.append(taskObject)
-            tableView.reloadData()
-            updateCountTasksLabel()
-        } catch let error as NSError{
-            print(error.localizedDescription)
+        DispatchQueue.global(qos: .background).sync {
+            let taskObject = Task(context: context)
+            taskObject.todo = todo
+            taskObject.descrip = descript
+            taskObject.completed = completed
+            taskObject.date = date
+            
+            do {
+                try context.save()
+                tasks.append(taskObject)
+                DispatchQueue.main.async { [weak self] in
+                    self?.tableView.reloadData()
+                    self?.updateCountTasksLabel()
+                }
+            } catch let error as NSError {
+                print("Error saving task: \(error.localizedDescription)")
+            }
         }
     }
 }
@@ -341,7 +346,7 @@ extension ViewController{
 
 //MARK: - Network
 extension ViewController{
-    
+
     func fetchTasks(){
         networkManager.fetchTasks { [weak self] result in
             switch result{
