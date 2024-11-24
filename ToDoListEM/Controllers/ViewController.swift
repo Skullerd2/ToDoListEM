@@ -124,7 +124,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return view.frame.height / 7
+        return 120
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -132,38 +132,53 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
-            
-            let task: Task
-            if isSearching {
-                let index = filteredTaskIndices[indexPath.row]
-                task = tasks[index]
-            } else {
-                task = tasks[indexPath.row]
-            }
-
-            cell.titleTask.text = task.todo
-            cell.descriptionTask.text = task.descrip
-            cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
-            cell.dateLabel.text = task.date
-            return cell
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
+        let task: Task
+        if isSearching {
+            let index = filteredTaskIndices[indexPath.row]
+            task = tasks[index]
+        } else {
+            task = tasks[indexPath.row]
         }
+        
+        cell.titleTask.text = task.todo
+        cell.descriptionTask.text = task.descrip
+        cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
+        cell.dateLabel.text = task.date
+        
+        if task.completed {
+            cell.titleTask.textColor = .fromHex("8E8E8F")
+            cell.descriptionTask.textColor = .fromHex("8E8E8F")
+            cell.dateLabel.textColor = .fromHex("8E8E8F")
+        } else {
+            cell.titleTask.textColor = .fromHex("F4F4F4")
+            cell.descriptionTask.textColor = .fromHex("F4F4F4")
+            cell.dateLabel.textColor = .fromHex("8E8E8F")
+        }
+        let attributes: [NSAttributedString.Key: Any] = [
+            .strikethroughStyle: task.completed ? NSUnderlineStyle.single.rawValue : 0
+        ]
+        let attributedTitle = NSAttributedString(string: task.todo ?? "", attributes: attributes)
+        cell.titleTask.attributedText = attributedTitle
+        
+        return cell
+    }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
         let index: Int
-                if isSearching {
-                    index = filteredTaskIndices[indexPath.row]
-                } else {
-                    index = indexPath.row
-                }
-
-                let task = tasks[index] // получаем задачу напрямую из tasks
-                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index) // используем index в tasks
-
-                tableView.reloadData()
+        if isSearching {
+            index = filteredTaskIndices[indexPath.row]
+        } else {
+            index = indexPath.row
+        }
+        
+        let task = tasks[index] // получаем задачу напрямую из tasks
+        updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index) // используем index в tasks
+        
+        tableView.reloadData()
     }
     
     @objc func buttonTapped() {
@@ -317,22 +332,22 @@ extension ViewController{
 
 extension ViewController{
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            searchField.resignFirstResponder()
-            searchTask(task: searchField.text ?? "")
-            return true
-        }
+        searchField.resignFirstResponder()
+        searchTask(task: searchField.text ?? "")
+        return true
+    }
     
     func searchTask(task: String) {
         guard task != "" else {
             isSearching = false
-            filteredTaskIndices = [] // Очищаем filteredTaskIndices, когда поиск пуст
+            filteredTaskIndices = []
             tableView.reloadData()
             return
         }
-
+        
         isSearching = true
-        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in // Переименовали task в taskItem для ясности
-            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil // Применяем метод к taskItem.todo
+        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
+            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
         }
         tableView.reloadData()
         countTasksLabel.text = "\(filteredTaskIndices.count) задач"
