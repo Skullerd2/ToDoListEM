@@ -3,10 +3,10 @@ import CoreData
 @testable import ToDoListEM
 
 class ViewControllerTests: XCTestCase {
-
+    
     var viewController: ViewController!
     var context: NSManagedObjectContext!
-
+    
     override func setUpWithError() throws {
         try super.setUpWithError()
         viewController = ViewController()
@@ -24,13 +24,13 @@ class ViewControllerTests: XCTestCase {
         
         viewController.context = context
     }
-
+    
     override func tearDownWithError() throws {
         viewController = nil
         context = nil
         try super.tearDownWithError()
     }
-
+    
     func testSaveTask() throws {
         let initialTaskCount = viewController.tasks.count
         let date = viewController.fetchCurrentDate()
@@ -40,7 +40,7 @@ class ViewControllerTests: XCTestCase {
             expectation.fulfill()
         }
         waitForExpectations(timeout: 1)
-
+        
         XCTAssertEqual(viewController.tasks.count, initialTaskCount + 1)
         let lastTask = viewController.tasks.last!
         XCTAssertEqual(lastTask.todo, "Test Task")
@@ -48,7 +48,7 @@ class ViewControllerTests: XCTestCase {
         XCTAssertEqual(lastTask.completed, false)
         XCTAssertEqual(lastTask.date, date)
     }
-
+    
     func testDeleteTask() throws {
         let date = viewController.fetchCurrentDate()
         viewController.saveTask(todo: "Task to Delete", descript: "Test Description", completed: false, date: date)
@@ -60,15 +60,15 @@ class ViewControllerTests: XCTestCase {
             expectationSave.fulfill()
         }
         waitForExpectations(timeout: 1)
-
-
+        
+        
         viewController.deleteTask(at: indexToDelete)
-
+        
         XCTAssertEqual(viewController.tasks.count, initialTaskCount - 1)
-
+        
         let fetchRequest: NSFetchRequest<Task> = Task.fetchRequest()
         let fetchedTasks = try context.fetch(fetchRequest)
         XCTAssertEqual(fetchedTasks.count, initialTaskCount - 1)
-
+        
     }
 }

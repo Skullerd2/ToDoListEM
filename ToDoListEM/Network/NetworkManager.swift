@@ -17,17 +17,17 @@ extension Session: NetworkRequestProtocol {
 
 final class NetworkManager {
     static let shared = NetworkManager()
-
+    
     private let requestExecutor: NetworkRequestProtocol
-
+    
     init(requestExecutor: NetworkRequestProtocol = Session.default) {
         self.requestExecutor = requestExecutor
     }
     private init() {
         self.requestExecutor = Session.default
     }
-
-
+    
+    
     func fetchTasks(completion: @escaping (Result<TaskModel, AFError>) -> Void) {
         requestExecutor.request("https://dummyjson.com/todos", completion: completion)
     }

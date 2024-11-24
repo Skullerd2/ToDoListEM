@@ -116,7 +116,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.showsVerticalScrollIndicator = false
-        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 5),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -134,38 +133,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
+        cell.selectionStyle = .none
         heightOfRow.append(cell.descriptionTask.numberOfLines)
-            let task: Task
-            if isSearching {
-                let index = filteredTaskIndices[indexPath.row]
-                task = tasks[index]
-            } else {
-                task = tasks[indexPath.row]
-            }
-
-            cell.titleTask.text = task.todo
-            cell.descriptionTask.text = task.descrip
-            cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
-            cell.dateLabel.text = task.date
-            return cell
+        let task: Task
+        if isSearching {
+            let index = filteredTaskIndices[indexPath.row]
+            task = tasks[index]
+        } else {
+            task = tasks[indexPath.row]
         }
+        
+        cell.titleTask.text = task.todo
+        cell.descriptionTask.text = task.descrip
+        cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
+        cell.dateLabel.text = task.date
+        return cell
+    }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            tableView.deselectRow(at: indexPath, animated: true)
-        }
         let index: Int
-                if isSearching {
-                    index = filteredTaskIndices[indexPath.row]
-                } else {
-                    index = indexPath.row
-                }
-
-                let task = tasks[index]
-                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index)
-
-                tableView.reloadData()
+        if isSearching {
+            index = filteredTaskIndices[indexPath.row]
+        } else {
+            index = indexPath.row
+        }
+        let task = tasks[index]
+        updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index)
+        tableView.reloadData()
     }
     
     @objc func buttonTapped() {
@@ -322,10 +317,10 @@ extension ViewController{
 
 extension ViewController{
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            searchField.resignFirstResponder()
-            searchTask(task: searchField.text ?? "")
-            return true
-        }
+        searchField.resignFirstResponder()
+        searchTask(task: searchField.text ?? "")
+        return true
+    }
     
     func searchTask(task: String) {
         guard task != "" else {
@@ -334,7 +329,7 @@ extension ViewController{
             tableView.reloadData()
             return
         }
-
+        
         isSearching = true
         filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
             taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
@@ -346,7 +341,7 @@ extension ViewController{
 
 //MARK: - Network
 extension ViewController{
-
+    
     func fetchTasks(){
         networkManager.fetchTasks { [weak self] result in
             switch result{

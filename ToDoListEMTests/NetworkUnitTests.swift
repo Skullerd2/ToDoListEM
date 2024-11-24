@@ -2,22 +2,22 @@ import XCTest
 import Alamofire
 @testable import ToDoListEM
 final class NetworkUnitTests: XCTestCase {
-
+    
     var networkManager: NetworkManager!
-
+    
     override func setUpWithError() throws {
         try super.setUpWithError()
         networkManager = NetworkManager.shared
     }
-
+    
     override func tearDownWithError() throws {
         networkManager = nil
         try super.tearDownWithError()
     }
-
+    
     func testFetchTasksSuccess() throws {
         let expectation = expectation(description: "Успешное получение задач")
-
+        
         networkManager.fetchTasks { result in
             switch result {
             case .success(let taskModel):
@@ -28,7 +28,7 @@ final class NetworkUnitTests: XCTestCase {
                 XCTFail("Ошибка: \(error)")
             }
         }
-
+        
         waitForExpectations(timeout: 5)
     }
     
