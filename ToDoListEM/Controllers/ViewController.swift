@@ -13,6 +13,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var tasks: [Task] = []
     var filteredTaskIndices: [Int] = []
     var isSearching = false
+    var context: NSManagedObjectContext!
+    var heightOfRow: [Int] = []
     
     let networkManager = NetworkManager.shared
     
@@ -132,53 +134,38 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
-        let task: Task
-        if isSearching {
-            let index = filteredTaskIndices[indexPath.row]
-            task = tasks[index]
-        } else {
-            task = tasks[indexPath.row]
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? TableViewCell else { return UITableViewCell() }
+        heightOfRow.append(cell.descriptionTask.numberOfLines)
+            let task: Task
+            if isSearching {
+                let index = filteredTaskIndices[indexPath.row]
+                task = tasks[index]
+            } else {
+                task = tasks[indexPath.row]
+            }
+
+            cell.titleTask.text = task.todo
+            cell.descriptionTask.text = task.descrip
+            cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
+            cell.dateLabel.text = task.date
+            return cell
         }
-        
-        cell.titleTask.text = task.todo
-        cell.descriptionTask.text = task.descrip
-        cell.imageViewCompleted.image = task.completed ? UIImage(named: "checkmark") : UIImage(named: "circle")
-        cell.dateLabel.text = task.date
-        
-        if task.completed {
-            cell.titleTask.textColor = .fromHex("8E8E8F")
-            cell.descriptionTask.textColor = .fromHex("8E8E8F")
-            cell.dateLabel.textColor = .fromHex("8E8E8F")
-        } else {
-            cell.titleTask.textColor = .fromHex("F4F4F4")
-            cell.descriptionTask.textColor = .fromHex("F4F4F4")
-            cell.dateLabel.textColor = .fromHex("8E8E8F")
-        }
-        let attributes: [NSAttributedString.Key: Any] = [
-            .strikethroughStyle: task.completed ? NSUnderlineStyle.single.rawValue : 0
-        ]
-        let attributedTitle = NSAttributedString(string: task.todo ?? "", attributes: attributes)
-        cell.titleTask.attributedText = attributedTitle
-        
-        return cell
-    }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             tableView.deselectRow(at: indexPath, animated: true)
         }
         let index: Int
-        if isSearching {
-            index = filteredTaskIndices[indexPath.row]
-        } else {
-            index = indexPath.row
-        }
-        
-        let task = tasks[index] // получаем задачу напрямую из tasks
-        updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index) // используем index в tasks
-        
-        tableView.reloadData()
+                if isSearching {
+                    index = filteredTaskIndices[indexPath.row]
+                } else {
+                    index = indexPath.row
+                }
+
+                let task = tasks[index]
+                updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index)
+
+                tableView.reloadData()
     }
     
     @objc func buttonTapped() {
@@ -272,12 +259,12 @@ extension ViewController{
 //MARK: - CoreData
 extension ViewController{
     
-    private func getContext() -> NSManagedObjectContext{
+    func getContext() -> NSManagedObjectContext{
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         return appDelegate.persistentContainer.viewContext
     }
     
-    private func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
+    func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
         let task = tasks[index]
         task.todo = todo
@@ -293,7 +280,7 @@ extension ViewController{
         }
     }
     
-    private func deleteTask(at index: Int){
+    func deleteTask(at index: Int){
         let context = getContext()
         let task = tasks[index]
         do {
@@ -307,23 +294,26 @@ extension ViewController{
         }
     }
     
-    private func saveTask(todo: String, descript: String, completed: Bool, date: String) {
+    func saveTask(todo: String, descript: String, completed: Bool, date: String) {
         let context = getContext()
         
-        guard let entity = NSEntityDescription.entity(forEntityName: "Task", in: context) else { return }
-        let taskObject = Task(entity: entity, insertInto: context)
-        taskObject.todo = todo
-        taskObject.descrip = descript
-        taskObject.completed = completed
-        taskObject.date = date
-        
-        do {
-            try context.save()
-            tasks.append(taskObject)
-            tableView.reloadData()
-            updateCountTasksLabel()
-        } catch let error as NSError{
-            print(error.localizedDescription)
+        DispatchQueue.global(qos: .background).sync {
+            let taskObject = Task(context: context)
+            taskObject.todo = todo
+            taskObject.descrip = descript
+            taskObject.completed = completed
+            taskObject.date = date
+            
+            do {
+                try context.save()
+                tasks.append(taskObject)
+                DispatchQueue.main.async { [weak self] in
+                    self?.tableView.reloadData()
+                    self?.updateCountTasksLabel()
+                }
+            } catch let error as NSError {
+                print("Error saving task: \(error.localizedDescription)")
+            }
         }
     }
 }
@@ -332,10 +322,10 @@ extension ViewController{
 
 extension ViewController{
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        searchField.resignFirstResponder()
-        searchTask(task: searchField.text ?? "")
-        return true
-    }
+            searchField.resignFirstResponder()
+            searchTask(task: searchField.text ?? "")
+            return true
+        }
     
     func searchTask(task: String) {
         guard task != "" else {
@@ -344,7 +334,7 @@ extension ViewController{
             tableView.reloadData()
             return
         }
-        
+
         isSearching = true
         filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
             taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
@@ -356,7 +346,7 @@ extension ViewController{
 
 //MARK: - Network
 extension ViewController{
-    
+
     func fetchTasks(){
         networkManager.fetchTasks { [weak self] result in
             switch result{
