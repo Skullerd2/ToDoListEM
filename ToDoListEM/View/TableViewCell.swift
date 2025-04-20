@@ -1,10 +1,3 @@
-//
-//  TableViewCell.swift
-//  ToDoListEM
-//
-//  Created by Vadim on 20.11.2024.
-//
-
 import UIKit
 
 class TableViewCell: UITableViewCell {
@@ -44,17 +37,27 @@ class TableViewCell: UITableViewCell {
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        
+        setupUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupUI() {
+        imageViewCompleted.translatesAutoresizingMaskIntoConstraints = false
+        titleTask.translatesAutoresizingMaskIntoConstraints = false
+        descriptionTask.translatesAutoresizingMaskIntoConstraints = false
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(titleTask)
         contentView.addSubview(descriptionTask)
         contentView.addSubview(dateLabel)
         contentView.addSubview(imageViewCompleted)
         
-        imageViewCompleted.translatesAutoresizingMaskIntoConstraints = false
-        titleTask.translatesAutoresizingMaskIntoConstraints = false
-        descriptionTask.translatesAutoresizingMaskIntoConstraints = false
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
             imageViewCompleted.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             imageViewCompleted.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
@@ -70,9 +73,4 @@ class TableViewCell: UITableViewCell {
             dateLabel.leadingAnchor.constraint(equalTo: descriptionTask.leadingAnchor)
         ])
     }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
 }

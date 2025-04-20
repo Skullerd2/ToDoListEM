@@ -9,7 +9,6 @@ class EditViewController: UIViewController, UITextFieldDelegate {
     var dateTask = "01/01/24"
     var completed: Bool = false
     var indexOfTask: Int = 0
-    
     let nameTextField = UITextField()
     let dateLabel = UILabel()
     let descriptionTextView = UITextView()
@@ -19,9 +18,7 @@ class EditViewController: UIViewController, UITextFieldDelegate {
         view.backgroundColor = .black
         nameTextField.delegate = self
         navigationController?.navigationBar.tintColor = .fromHex("FED702")
-        setNameTextField()
-        setDateLabel()
-        setDescriptionTextView()
+        setupUI()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -38,11 +35,6 @@ class EditViewController: UIViewController, UITextFieldDelegate {
         nameTextField.layoutMargins = .zero
         nameTextField.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(nameTextField)
-        NSLayoutConstraint.activate([
-            nameTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -30),
-            nameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 11),
-            nameTextField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
     }
     
     private func setDateLabel(){
@@ -50,13 +42,7 @@ class EditViewController: UIViewController, UITextFieldDelegate {
         dateLabel.textColor = .fromHex("8E8E8F")
         dateLabel.text = dateTask
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         view.addSubview(dateLabel)
-        NSLayoutConstraint.activate([
-            dateLabel.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 10),
-            dateLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            dateLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
     }
     
     private func setDescriptionTextView(){
@@ -64,13 +50,29 @@ class EditViewController: UIViewController, UITextFieldDelegate {
         descriptionTextView.textColor = .fromHex("F4F4F4")
         descriptionTextView.translatesAutoresizingMaskIntoConstraints = false
         descriptionTextView.text = descriptionTask
-        
         view.addSubview(descriptionTextView)
+    }
+    
+    private func setupUI() {
+        setNameTextField()
+        setDateLabel()
+        setDescriptionTextView()
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
+            nameTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -30),
+            nameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 11),
+            nameTextField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            dateLabel.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 10),
+            dateLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            dateLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             descriptionTextView.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 7),
             descriptionTextView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
             descriptionTextView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             descriptionTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            
         ])
     }
 }

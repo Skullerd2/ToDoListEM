@@ -39,21 +39,23 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         if isFirstLaunch(){
             fetchTasks()
         }
-        
         view.backgroundColor = .black
-        
+        setupNavigationController()
+        setupUI()
+    }
+    
+    @objc func buttonTapped() {
+        let date = fetchCurrentDate()
+        saveTask(todo: "Название задачи", descript: "Описание задачи", completed: false, date: date)
+        pushEditViewController(title: "Название задачи", desrip: "Описание задачи", completed: false, date: date, index: tasks.count - 1)
+    }
+    
+    private func setupNavigationController() {
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
         navigationController?.navigationBar.tintColor = .fromHex("F4F4F4")
         title = "Задачи"
-        
-        setSearchField()
-        setToolbar()
-        setCountTasksLabel()
-        setCreateTaskButton()
-        setTableView()
     }
-    
     
     private func setSearchField(){
         searchField.backgroundColor = .fromHex("272729")
@@ -62,24 +64,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         searchField.translatesAutoresizingMaskIntoConstraints = false
         searchField.layer.cornerRadius = 15
         view.addSubview(searchField)
-        NSLayoutConstraint.activate([
-            searchField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            searchField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-            searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
-            searchField.heightAnchor.constraint(equalToConstant: 50)
-        ])
     }
     
     private func setToolbar(){
         toolbar.backgroundColor = .fromHex("272729")
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(toolbar)
-        NSLayoutConstraint.activate([
-            toolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            toolbar.heightAnchor.constraint(equalToConstant: 83)
-        ])
     }
     
     private func setCountTasksLabel(){
@@ -88,24 +78,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         countTasksLabel.sizeToFit()
         countTasksLabel.translatesAutoresizingMaskIntoConstraints = false
         toolbar.addSubview(countTasksLabel)
-        
-        NSLayoutConstraint.activate([
-            countTasksLabel.centerXAnchor.constraint(equalTo: toolbar.centerXAnchor),
-            countTasksLabel.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
-        ])
     }
     
     private func setCreateTaskButton(){
         createTaskButton.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
         createTaskButton.tintColor = .fromHex("FED702")
         createTaskButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
-        toolbar.addSubview(createTaskButton)
         createTaskButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            createTaskButton.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
-            createTaskButton.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -16)
-        ])
+        toolbar.addSubview(createTaskButton)
     }
     
     private func setTableView(){
@@ -113,10 +93,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         tableView.delegate = self
         tableView.backgroundColor = .none
         tableView.register(TableViewCell.self, forCellReuseIdentifier: "cell")
-        view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.showsVerticalScrollIndicator = false
+        view.addSubview(tableView)
+    }
+    
+    private func setupUI() {
+        setSearchField()
+        setToolbar()
+        setCountTasksLabel()
+        setCreateTaskButton()
+        setTableView()
+        setupConstraints()
+    }
+    
+    private func setupConstraints() {
         NSLayoutConstraint.activate([
+            searchField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            searchField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            searchField.heightAnchor.constraint(equalToConstant: 50),
+            toolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.heightAnchor.constraint(equalToConstant: 83),
+            countTasksLabel.centerXAnchor.constraint(equalTo: toolbar.centerXAnchor),
+            countTasksLabel.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+            createTaskButton.centerYAnchor.constraint(equalTo: toolbar.centerYAnchor, constant: -10),
+            createTaskButton.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -16),
             tableView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 5),
             tableView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
@@ -124,6 +128,22 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         ])
     }
     
+    func fetchCurrentDate() -> String{
+        let currentDate = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yy"
+        let formattedDate = formatter.string(from: currentDate)
+        return formattedDate
+    }
+    
+    func updateCountTasksLabel(){
+        countTasksLabel.text = isSearching ? "\(filteredTaskIndices.count) задач" : "\(tasks.count) задач"
+    }
+}
+
+//MARK: - Table View
+
+extension ViewController {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 120
     }
@@ -163,36 +183,19 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         tableView.reloadData()
     }
     
-    @objc func buttonTapped() {
-        let date = fetchCurrentDate()
-        saveTask(todo: "Название задачи", descript: "Описание задачи", completed: false, date: date)
-        pushEditViewController(title: "Название задачи", desrip: "Описание задачи", completed: false, date: date, index: tasks.count - 1)
-    }
-    
-    func fetchCurrentDate() -> String{
-        let currentDate = Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yy"
-        let formattedDate = formatter.string(from: currentDate)
-        return formattedDate
-    }
-    
-    func updateCountTasksLabel(){
-        countTasksLabel.text = "\(tasks.count) задач"
-    }
-    
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let localIndex = isSearching ? filteredTaskIndices[indexPath.row] : indexPath.row
         
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] suggestedActions in
             
             let editAction = UIAction(title: "Редактировать", image: UIImage(named: "edit")?.withTintColor(.fromHex("F4F4F4"))) { [weak self] action in
                 
-                self?.pushEditViewController(title: self?.tasks[indexPath.row].todo ?? "Unknown", desrip: self?.tasks[indexPath.row].descrip ?? "Unknown", completed: self?.tasks[indexPath.row].completed ?? false, date: self?.tasks[indexPath.row].date ?? "Unknown", index: indexPath.row)
+                self?.pushEditViewController(title: self?.tasks[localIndex].todo ?? "Unknown", desrip: self?.tasks[localIndex].descrip ?? "Unknown", completed: self?.tasks[localIndex].completed ?? false, date: self?.tasks[localIndex].date ?? "Unknown", index: indexPath.row)
             }
             
             let shareAction = UIAction(title: "Поделиться", image: UIImage(named: "share")?.withTintColor(.fromHex("F4F4F4"))) { [weak self] action in
                 
-                let shareText = "Название задачи: \(self?.tasks[indexPath.row].todo ?? "Unknown"), описание задачи: \(self?.tasks[indexPath.row].descrip ?? "Unknown"), статус задачи: \((((self?.tasks[indexPath.row].completed) != nil) ? "Выполнена" : "Не выполнена") ?? "Unknown"), время постановления: \(self?.tasks[indexPath.row].date ?? "Unknown")"
+                let shareText = "Название задачи: \(self?.tasks[localIndex].todo ?? "Unknown"), описание задачи: \(self?.tasks[localIndex].descrip ?? "Unknown"), статус задачи: \((((self?.tasks[localIndex].completed) != nil) ? "Не выполнена" : "Выполнена") ?? "Unknown"), время постановления: \(self?.tasks[localIndex].date ?? "Unknown")"
                 let shareController = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
                 
                 shareController.completionWithItemsHandler = { _, bool, _, _ in
@@ -204,7 +207,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             }
             
             let deleteAction = UIAction(title: "Удалить", image: UIImage(named: "delete"), attributes: .destructive) { [weak self] action in
-                self?.deleteTask(at: indexPath.row)
+                self?.deleteTask(at: localIndex)
             }
             
             return UIMenu(children: [editAction, shareAction, deleteAction])
@@ -213,6 +216,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return configuration
     }
 }
+
 
 
 //MARK: - Transfer data between VC
@@ -261,11 +265,10 @@ extension ViewController{
     
     func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
-        let task = tasks[index]
-        task.todo = todo
-        task.descrip = descript
-        task.date = date
-        task.completed = completed
+        tasks[index].todo = todo
+        tasks[index].descrip = descript
+        tasks[index].date = date
+        tasks[index].completed = completed
         do {
             try context.save()
             tableView.reloadData()
@@ -281,6 +284,9 @@ extension ViewController{
         do {
             context.delete(task)
             tasks.remove(at: index)
+            if isSearching {
+                searchTask(task: searchField.text ?? "")
+            }
             tableView.reloadData()
             updateCountTasksLabel()
             try context.save()
@@ -302,6 +308,9 @@ extension ViewController{
             do {
                 try context.save()
                 tasks.append(taskObject)
+                if isSearching {
+                    searchTask(task: searchField.text ?? "")
+                }
                 DispatchQueue.main.async { [weak self] in
                     self?.tableView.reloadData()
                     self?.updateCountTasksLabel()
@@ -334,8 +343,8 @@ extension ViewController{
         filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
             taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
         }
+        updateCountTasksLabel()
         tableView.reloadData()
-        countTasksLabel.text = "\(filteredTaskIndices.count) задач"
     }
 }
 
@@ -355,69 +364,5 @@ extension ViewController{
                 print(error.localizedDescription)
             }
         }
-    }
-}
-
-extension UITextField {
-    func setPlaceholder(_ placeholderText: String, leftIcon: UIImage? = nil, rightIcon: UIImage? = nil, padding: CGFloat = 16) {
-        let leftPaddingView = UIView(frame: CGRect(x: 0, y: 0, width: padding + (leftIcon == nil ? 0 : 24), height: self.frame.height))
-        self.leftView = leftPaddingView
-        self.leftViewMode = .always
-        
-        if let leftIcon = leftIcon {
-            let leftIconView = UIImageView(frame: CGRect(x: padding, y: 0, width: 20, height: 20))
-            leftIconView.image = leftIcon
-            leftIconView.contentMode = .scaleAspectFit
-            leftIconView.tintColor = .fromHex("8E8E8F")
-            leftPaddingView.addSubview(leftIconView)
-            leftIconView.center.y = leftPaddingView.center.y
-        }
-        
-        let rightPaddingView = UIView(frame: CGRect(x: 0, y: 0, width: padding + (rightIcon == nil ? 0 : 24) , height: self.frame.height))
-        self.rightView = rightPaddingView
-        self.rightViewMode = .always
-        
-        if let rightIcon = rightIcon {
-            let rightIconView = UIImageView(frame: CGRect(x: 0, y: 0, width: 20, height: 20))
-            rightIconView.image = rightIcon
-            rightIconView.contentMode = .scaleAspectFit
-            rightIconView.tintColor = .fromHex("8E8E8F")
-            rightPaddingView.addSubview(rightIconView)
-            rightIconView.center = rightPaddingView.center
-        }
-        
-        let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.fromHex("8E8E8F"),
-            .paragraphStyle: {
-                let paragraphStyle = NSMutableParagraphStyle()
-                paragraphStyle.firstLineHeadIndent = 0
-                return paragraphStyle
-            }()
-        ]
-        self.attributedPlaceholder = NSAttributedString(string: placeholderText, attributes: attributes)
-    }
-}
-
-extension UIColor {
-    static func fromHex(_ hex: String) -> UIColor {
-        var cString: String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        
-        if cString.hasPrefix("#") {
-            cString.remove(at: cString.startIndex)
-        }
-        
-        if (cString.count) != 6 {
-            return UIColor.gray
-        }
-        
-        var rgbValue: UInt64 = 0
-        Scanner(string: cString).scanHexInt64(&rgbValue)
-        
-        return UIColor(
-            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
-            alpha: CGFloat(1.0)
-        )
     }
 }
