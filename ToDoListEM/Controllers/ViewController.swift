@@ -226,7 +226,8 @@ protocol DataTransferDelegate: AnyObject {
 
 extension ViewController: DataTransferDelegate{
     func didTransferData(title: String, descrip: String, completed: Bool, date: String, index: Int) {
-        updateTask(todo: title, descript: descrip, completed: completed, date: date, index: index)
+        let localIndex = isSearching ? filteredTaskIndices[index] : index
+        updateTask(todo: title, descript: descrip, completed: completed, date: date, index: localIndex)
     }
     
     func pushEditViewController(title: String, desrip: String, completed: Bool, date: String, index: Int){
@@ -271,6 +272,9 @@ extension ViewController{
         tasks[index].completed = completed
         do {
             try context.save()
+            if isSearching {
+                searchTask(task: searchField.text ?? "")
+            }
             tableView.reloadData()
             updateCountTasksLabel()
         } catch let error as NSError{
@@ -335,6 +339,7 @@ extension ViewController{
         guard task != "" else {
             isSearching = false
             filteredTaskIndices = []
+            updateCountTasksLabel()
             tableView.reloadData()
             return
         }
