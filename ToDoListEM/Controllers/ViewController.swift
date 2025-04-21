@@ -181,7 +181,6 @@ extension ViewController {
         }
         let task = tasks[index]
         updateTask(todo: task.todo!, descript: task.descrip!, completed: !task.completed, date: task.date!, index: index)
-        tableView.reloadData()
     }
     
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
@@ -267,7 +266,7 @@ extension ViewController{
     
     func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
-        DispatchQueue.global(qos: .background).sync { [weak self] in
+        DispatchQueue.global(qos: .background).async { [weak self] in
             let task = self?.tasks[index]
             do {
                 try CoreDataManager.shared.updateTask(task!, todo: todo, descript: descript, completed: completed, date: date, context: context)
@@ -308,17 +307,17 @@ extension ViewController{
     func saveTask(todo: String, descript: String, completed: Bool, date: String) {
         let context = getContext()
         
-        DispatchQueue.global(qos: .background).sync {
+        DispatchQueue.global(qos: .background).async { [weak self] in
             
             do {
-                let taskObject = try coreDataManager.saveTask(todo: todo, descript: descript, completed: completed, date: date, context: context)
+                let taskObject = try self?.coreDataManager.saveTask(todo: todo, descript: descript, completed: completed, date: date, context: context)
                 
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
                     if self.isSearching {
                         self.searchTask(task: self.searchField.text ?? "")
                     }
-                    self.tasks.append(taskObject)
+                    self.tasks.append(taskObject!)
                     self.tableView.reloadData()
                     self.updateCountTasksLabel()
                 }
