@@ -17,6 +17,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var heightOfRow: [Int] = []
     
     let networkManager = NetworkManager.shared
+    let coreDataManager = CoreDataManager.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -47,7 +48,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     @objc func buttonTapped() {
         let date = fetchCurrentDate()
         saveTask(todo: "Название задачи", descript: "Описание задачи", completed: false, date: date)
-        pushEditViewController(title: "Название задачи", desrip: "Описание задачи", completed: false, date: date, index: tasks.count - 1)
+        pushEditViewController(title: "Название задачи", desrip: "Описание задачи", completed: false, date: date, index: tasks.count)
     }
     
     private func setupNavigationController() {
@@ -266,36 +267,41 @@ extension ViewController{
     
     func updateTask(todo: String, descript: String, completed: Bool, date: String, index: Int){
         let context = getContext()
-        tasks[index].todo = todo
-        tasks[index].descrip = descript
-        tasks[index].date = date
-        tasks[index].completed = completed
-        do {
-            try context.save()
-            if isSearching {
-                searchTask(task: searchField.text ?? "")
+        DispatchQueue.global(qos: .background).sync { [weak self] in
+            let task = self?.tasks[index]
+            do {
+                try CoreDataManager.shared.updateTask(task!, todo: todo, descript: descript, completed: completed, date: date, context: context)
+                DispatchQueue.main.async { [weak self] in
+                    if ((self?.isSearching) != nil) {
+                        self?.searchTask(task: self?.searchField.text ?? "")
+                    }
+                    self?.tableView.reloadData()
+                    self?.updateCountTasksLabel()
+                }
+            } catch let error as NSError{
+                print(error.localizedDescription)
             }
-            tableView.reloadData()
-            updateCountTasksLabel()
-        } catch let error as NSError{
-            print(error.localizedDescription)
         }
     }
     
     func deleteTask(at index: Int){
         let context = getContext()
         let task = tasks[index]
-        do {
-            context.delete(task)
-            tasks.remove(at: index)
-            if isSearching {
-                searchTask(task: searchField.text ?? "")
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            do {
+                try CoreDataManager.shared.deleteTask(task, context: context)
+                DispatchQueue.main.async {
+                    self?.tasks.remove(at: index)
+                    if ((self?.isSearching) != nil) {
+                        self?.searchTask(task: self?.searchField.text ?? "")
+                    }
+                    self?.tableView.reloadData()
+                    self?.updateCountTasksLabel()
+                }
+                try context.save()
+            } catch let error as NSError{
+                print(error.localizedDescription)
             }
-            tableView.reloadData()
-            updateCountTasksLabel()
-            try context.save()
-        } catch let error as NSError{
-            print(error.localizedDescription)
         }
     }
     
@@ -303,21 +309,18 @@ extension ViewController{
         let context = getContext()
         
         DispatchQueue.global(qos: .background).sync {
-            let taskObject = Task(context: context)
-            taskObject.todo = todo
-            taskObject.descrip = descript
-            taskObject.completed = completed
-            taskObject.date = date
             
             do {
-                try context.save()
-                tasks.append(taskObject)
-                if isSearching {
-                    searchTask(task: searchField.text ?? "")
-                }
+                let taskObject = try coreDataManager.saveTask(todo: todo, descript: descript, completed: completed, date: date, context: context)
+                
                 DispatchQueue.main.async { [weak self] in
-                    self?.tableView.reloadData()
-                    self?.updateCountTasksLabel()
+                    guard let self = self else { return }
+                    if self.isSearching {
+                        self.searchTask(task: self.searchField.text ?? "")
+                    }
+                    self.tasks.append(taskObject)
+                    self.tableView.reloadData()
+                    self.updateCountTasksLabel()
                 }
             } catch let error as NSError {
                 print("Error saving task: \(error.localizedDescription)")
@@ -345,8 +348,10 @@ extension ViewController{
         }
         
         isSearching = true
-        filteredTaskIndices = tasks.enumerated().compactMap { index, taskItem in
-            taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
+        DispatchQueue.global(qos: .userInteractive).sync { [weak self] in
+            self?.filteredTaskIndices = (self?.tasks.enumerated().compactMap { index, taskItem in
+                taskItem.todo?.localizedCaseInsensitiveContains(task) == true ? index : nil
+            }) ?? []
         }
         updateCountTasksLabel()
         tableView.reloadData()
